@@ -11,11 +11,16 @@
 , openssl ? null
 , sqlite ? null
 , python27 ? null
+, python310 ? null
 , zlib ? null
+, gdbm ? null
+, libffi ? null
+, readline ? null
 }:
 
 let
   python27Versions = [ "16" "21" ];
+  python39Versions = [ "23" "24" ];
 
 in
 
@@ -24,6 +29,10 @@ assert stdenv.isLinux -> bzip2 != null;
 assert stdenv.isLinux -> libxcrypt-legacy != null;
 assert stdenv.isLinux -> ncurses5 != null;
 assert stdenv.isLinux -> zlib != null;
+assert stdenv.isLinux -> gdbm != null;
+assert stdenv.isLinux -> libffi != null;
+assert stdenv.isLinux -> readline != null;
+assert stdenv.isLinux -> openssl != null;
 
 package:
 
@@ -67,10 +76,17 @@ let
       ncurses5
       stdenv.cc.cc.lib
       zlib
+      gdbm
+      sqlite
+      libffi
+      readline
+      openssl
     ] ++ lib.optionals (lib.versionOlder versionMajor "18") [
       libedit
     ] ++ lib.optionals (builtins.elem versionMajor python27Versions) [
       python27
+    ] ++ lib.optionals (builtins.elem versionMajor python39Versions) [
+      python310
     ]);
 
     postFixup = ''
@@ -78,6 +94,10 @@ let
 
       ${lib.optionalString (stdenv.isLinux && lib.versionOlder versionMajor "18") ''
       ln -sf ${libedit}/lib/libedit.so $out/toolchains/llvm/prebuilt/linux-x86_64/lib64/libedit.so.2
+      ''}
+
+      ${lib.optionalString (stdenv.isLinux && builtins.elem versionMajor python39Versions) ''
+      rm -rf $out/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.9
       ''}
 
       ${lib.optionalString (stdenv.isLinux && builtins.elem versionMajor python27Versions) ''
